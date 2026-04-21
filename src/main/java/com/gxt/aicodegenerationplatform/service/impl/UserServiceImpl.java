@@ -2,7 +2,6 @@ package com.gxt.aicodegenerationplatform.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.util.StrUtil;
-import com.gxt.aicodegenerationplatform.common.PasswordUtils;
 import com.gxt.aicodegenerationplatform.exception.BusinessException;
 import com.gxt.aicodegenerationplatform.exception.ErrorCode;
 import com.gxt.aicodegenerationplatform.model.enums.UserRoleEnum;
@@ -101,6 +100,34 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>  implements U
         return this.getLoginUserVO(user);
     }
 
+    @Override
+    public User getLoginUser(HttpServletRequest request) {
+        // 先判断是否已登录
+        Object userObj = request.getSession().getAttribute(USER_LOGIN_STATE);
+        User currentUser = (User) userObj;
+        if (currentUser == null || currentUser.getId() == null) {
+            throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR);
+        }
+        // 从数据库查询（追求性能的话可以注释，直接返回上述结果）
+        long userId = currentUser.getId();
+        currentUser = this.getById(userId);
+        if (currentUser == null) {
+            throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR);
+        }
+        return currentUser;
+    }
+
+    @Override
+    public boolean userLogout(HttpServletRequest request) {
+        // 先判断是否已登录
+        Object userObj = request.getSession().getAttribute(USER_LOGIN_STATE);
+        if (userObj == null) {
+            throw new BusinessException(ErrorCode.OPERATION_ERROR, "未登录");
+        }
+        // 移除登录态
+        request.getSession().removeAttribute(USER_LOGIN_STATE);
+        return true;
+    }
 
 
 }
