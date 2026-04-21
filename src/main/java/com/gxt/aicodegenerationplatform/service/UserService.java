@@ -1,9 +1,14 @@
 package com.gxt.aicodegenerationplatform.service;
 
+import com.gxt.aicodegenerationplatform.model.dto.user.UserQueryRequest;
 import com.gxt.aicodegenerationplatform.model.vo.LoginUserVO;
+import com.gxt.aicodegenerationplatform.model.vo.UserVO;
+import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.core.service.IService;
 import com.gxt.aicodegenerationplatform.model.entity.User;
 import jakarta.servlet.http.HttpServletRequest;
+
+import java.util.List;
 
 /**
  * 用户 服务层。
@@ -54,5 +59,19 @@ public interface UserService extends IService<User> {
      */
     boolean userLogout(HttpServletRequest request);
 
+    /**
+     * 转换user信息为安全信息
+     * @param userList
+     * @return
+     */
+    List<UserVO> getUserVOList(List<User> userList);
+    UserVO getUserVO(User user);
+
+    /**
+     * 查询转userQueryRequest对象
+     * @param userQueryRequest
+     * @return
+     */
+    QueryWrapper getQueryWrapper(UserQueryRequest userQueryRequest);
 
 }
