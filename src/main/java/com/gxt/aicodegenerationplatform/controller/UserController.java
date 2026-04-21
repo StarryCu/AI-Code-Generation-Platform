@@ -1,5 +1,10 @@
 package com.gxt.aicodegenerationplatform.controller;
 
+import com.gxt.aicodegenerationplatform.common.BaseResponse;
+import com.gxt.aicodegenerationplatform.common.ResultUtils;
+import com.gxt.aicodegenerationplatform.exception.ErrorCode;
+import com.gxt.aicodegenerationplatform.exception.ThrowUtils;
+import com.gxt.aicodegenerationplatform.model.dto.user.UserRegisterRequest;
 import com.mybatisflex.core.paginate.Page;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -9,7 +14,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.beans.factory.annotation.Autowired;
-import com.gxt.aicodegenerationplatform.entity.User;
+import com.gxt.aicodegenerationplatform.model.entity.User;
 import com.gxt.aicodegenerationplatform.service.UserService;
 import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
@@ -17,7 +22,7 @@ import java.util.List;
 /**
  * 用户 控制层。
  *
- * @author <a href="https://github.com/liyupi">程序员鱼皮</a>
+ * @author <a href="https://github.com/StarryCu"></a>
  */
 @RestController
 @RequestMapping("/user")
@@ -89,6 +94,22 @@ public class UserController {
     @GetMapping("page")
     public Page<User> page(Page<User> page) {
         return userService.page(page);
+    }
+
+    /**
+     * 用户注册
+     *
+     * @param userRegisterRequest 用户注册请求
+     * @return 注册结果
+     */
+    @PostMapping("register")
+    public BaseResponse<Long> userRegister(@RequestBody UserRegisterRequest userRegisterRequest) {
+        ThrowUtils.throwIf(userRegisterRequest == null, ErrorCode.PARAMS_ERROR);
+        String userAccount = userRegisterRequest.getUserAccount();
+        String userPassword = userRegisterRequest.getUserPassword();
+        String checkPassword = userRegisterRequest.getCheckPassword();
+        long result = userService.userRegister(userAccount, userPassword, checkPassword);
+        return ResultUtils.success(result);
     }
 
 }

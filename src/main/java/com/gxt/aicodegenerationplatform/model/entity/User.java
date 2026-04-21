@@ -1,4 +1,4 @@
-package com.gxt.aicodegenerationplatform.entity;
+package com.gxt.aicodegenerationplatform.model.entity;
 
 import com.mybatisflex.annotation.Column;
 import com.mybatisflex.annotation.Id;
@@ -17,7 +17,6 @@ import lombok.NoArgsConstructor;
 /**
  * 用户 实体类。
  *
- * @author <a href="https://github.com/liyupi">程序员鱼皮</a>
  */
 @Data
 @Builder
