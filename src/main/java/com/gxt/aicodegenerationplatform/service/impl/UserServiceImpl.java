@@ -1,16 +1,22 @@
 package com.gxt.aicodegenerationplatform.service.impl;
 
+import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.util.StrUtil;
 import com.gxt.aicodegenerationplatform.common.PasswordUtils;
 import com.gxt.aicodegenerationplatform.exception.BusinessException;
 import com.gxt.aicodegenerationplatform.exception.ErrorCode;
 import com.gxt.aicodegenerationplatform.model.enums.UserRoleEnum;
+import com.gxt.aicodegenerationplatform.model.vo.LoginUserVO;
 import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.spring.service.impl.ServiceImpl;
 import com.gxt.aicodegenerationplatform.model.entity.User;
 import com.gxt.aicodegenerationplatform.mapper.UserMapper;
 import com.gxt.aicodegenerationplatform.service.UserService;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.stereotype.Service;
+
+import static com.gxt.aicodegenerationplatform.common.PasswordUtils.getEncryptPassword;
+import static com.gxt.aicodegenerationplatform.constant.UserConstant.USER_LOGIN_STATE;
 
 /**
  * 用户 服务层实现。
@@ -42,7 +48,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>  implements U
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "账号重复");
         }
         // 3. 加密
-        String encryptPassword = PasswordUtils.getEncryptPassword(userPassword);
+        String encryptPassword = getEncryptPassword(userPassword);
         // 4. 插入数据
         User user = new User();
         user.setUserAccount(userAccount);
@@ -55,5 +61,46 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>  implements U
         }
         return user.getId();
     }
+
+    @Override
+    public LoginUserVO getLoginUserVO(User user) {
+        if (user == null) {
+            return null;
+        }
+        LoginUserVO loginUserVO = new LoginUserVO();
+        BeanUtil.copyProperties(user, loginUserVO);
+        return loginUserVO;
+    }
+
+    @Override
+    public LoginUserVO userLogin(String userAccount, String userPassword, HttpServletRequest request) {
+        // 1. 校验
+        if (StrUtil.hasBlank(userAccount, userPassword)) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "参数为空");
+        }
+        if (userAccount.length() < 4) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "账号错误");
+        }
+        if (userPassword.length() < 8) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "密码错误");
+        }
+        // 2. 加密
+        String encryptPassword = getEncryptPassword(userPassword);
+        // 查询用户是否存在
+        QueryWrapper queryWrapper = new QueryWrapper();
+        queryWrapper.eq("userAccount", userAccount);
+        queryWrapper.eq("userPassword", encryptPassword);
+        User user = this.mapper.selectOneByQuery(queryWrapper);
+        // 用户不存在
+        if (user == null) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "用户不存在或密码错误");
+        }
+        // 3. 记录用户的登录态
+        request.getSession().setAttribute(USER_LOGIN_STATE, user);
+        // 4. 获得脱敏后的用户信息
+        return this.getLoginUserVO(user);
+    }
+
+
 
 }

@@ -4,8 +4,11 @@ import com.gxt.aicodegenerationplatform.common.BaseResponse;
 import com.gxt.aicodegenerationplatform.common.ResultUtils;
 import com.gxt.aicodegenerationplatform.exception.ErrorCode;
 import com.gxt.aicodegenerationplatform.exception.ThrowUtils;
+import com.gxt.aicodegenerationplatform.model.dto.user.UserLoginRequest;
 import com.gxt.aicodegenerationplatform.model.dto.user.UserRegisterRequest;
+import com.gxt.aicodegenerationplatform.model.vo.LoginUserVO;
 import com.mybatisflex.core.paginate.Page;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -111,5 +114,15 @@ public class UserController {
         long result = userService.userRegister(userAccount, userPassword, checkPassword);
         return ResultUtils.success(result);
     }
+
+    @PostMapping("/login")
+    public BaseResponse<LoginUserVO> userLogin(@RequestBody UserLoginRequest userLoginRequest, HttpServletRequest request) {
+        ThrowUtils.throwIf(userLoginRequest == null, ErrorCode.PARAMS_ERROR);
+        String userAccount = userLoginRequest.getUserAccount();
+        String userPassword = userLoginRequest.getUserPassword();
+        LoginUserVO loginUserVO = userService.userLogin(userAccount, userPassword, request);
+        return ResultUtils.success(loginUserVO);
+    }
+
 
 }
