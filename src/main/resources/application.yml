@@ -1,6 +1,8 @@
 spring:
   application:
     name: AI-Code-Generation-Platform
+  profiles:
+    active: local
     # mysql
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver

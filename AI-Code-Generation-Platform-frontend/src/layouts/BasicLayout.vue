@@ -1,9 +1,16 @@
 <script setup lang="ts">
+import { onMounted } from 'vue'
 import { RouterView } from 'vue-router'
 import GlobalHeader from '@/components/GlobalHeader.vue'
 import { siteTitle } from '@/config/site'
+import { useUserStore } from '@/stores/user'
 
 const year = new Date().getFullYear()
+const userStore = useUserStore()
+
+onMounted(() => {
+  userStore.fetchLoginUser()
+})
 </script>
 
 <template>
@@ -62,6 +69,13 @@ const year = new Date().getFullYear()
   .basic-layout__content {
     padding: 24px;
   }
+}
+
+:deep(.ant-menu-horizontal) {
+  --ant-menu-horizontal-track-transition: transform 0.1s ease !important;
+}
+:deep(.ant-menu-item::after) {
+  transition: all 0.1s ease !important;
 }
 </style>
 
