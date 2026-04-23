@@ -3,6 +3,7 @@ package com.gxt.aicodegenerationplatform.ai;
 import com.gxt.aicodegenerationplatform.ai.model.HtmlCodeResult;
 import com.gxt.aicodegenerationplatform.ai.model.MultiFileCodeResult;
 import dev.langchain4j.service.SystemMessage;
+import reactor.core.publisher.Flux;
 
 public interface AiCodeGeneratorService {
 
@@ -23,5 +24,23 @@ public interface AiCodeGeneratorService {
      */
     @SystemMessage(fromResource = "prompt/long-system-prompt.txt")
     MultiFileCodeResult generateMultiFileCode(String userMessage);
+
+    /**
+     * 生成 HTML 代码（流式）
+     *
+     * @param userMessage 用户消息
+     * @return 生成的代码结果
+     */
+    @SystemMessage(fromResource = "prompt/short-system-prompt.txt")
+    Flux<String> generateHtmlCodeStream(String userMessage);
+
+    /**
+     * 生成多文件代码（流式）
+     *
+     * @param userMessage 用户消息
+     * @return 生成的代码结果
+     */
+    @SystemMessage(fromResource = "prompt/long-system-prompt.txt")
+    Flux<String> generateMultiFileCodeStream(String userMessage);
 
 }
