@@ -60,7 +60,8 @@ async function onSubmit() {
 
 <template>
   <div class="page">
-    <a-card class="card" title="用户注册">
+    <div class="card ds-surface">
+      <h2 class="card__title">用户注册</h2>
       <a-form :model="formState" :rules="rules" layout="vertical" @finish="onSubmit">
         <a-form-item label="账号" name="userAccount">
           <a-input v-model:value="formState.userAccount" autocomplete="username" placeholder="账号" />
@@ -87,29 +88,59 @@ async function onSubmit() {
         已有账号？
         <RouterLink to="/user/login">去登录</RouterLink>
       </div>
-    </a-card>
+    </div>
   </div>
 </template>
 
 <style scoped>
+.ds-surface {
+  background: var(--ds-surface);
+  border-radius: var(--ds-radius-xl);
+  box-shadow: var(--ds-shadow);
+  border: 1px solid var(--ds-border);
+}
+
 .page {
   display: flex;
   justify-content: center;
-  padding: 24px 16px;
+  padding: 32px 16px 48px;
 }
 
 .card {
   width: 100%;
-  max-width: 400px;
+  max-width: 420px;
+  padding: 28px 28px 24px;
+}
+
+.card__title {
+  margin: 0 0 22px;
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--ds-ink);
+  letter-spacing: -0.02em;
+}
+
+.card :deep(.ant-input-affix-wrapper),
+.card :deep(.ant-input) {
+  border-radius: 12px;
+}
+
+.card :deep(.ant-btn-primary) {
+  height: 46px !important;
+  border-radius: 14px !important;
+  font-weight: 700 !important;
 }
 
 .extra {
   text-align: center;
-  color: rgba(0, 0, 0, 0.45);
+  color: var(--ds-text-muted);
   font-size: 14px;
+  margin-top: 8px;
 }
 
 .extra a {
   margin-left: 4px;
+  color: var(--ds-accent);
+  font-weight: 600;
 }
 </style>

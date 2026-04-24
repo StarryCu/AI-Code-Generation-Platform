@@ -1,0 +1,39 @@
+/* SaaS 仪表盘风格：暖灰底、白卡片、橙强调、深墨字 */
+:root {
+  --ds-page-bg: #f4f5f7;
+  --ds-page-bg-warm: #f2efe9;
+  --ds-sidebar-bg: #ffffff;
+  --ds-surface: #ffffff;
+  --ds-text: #141414;
+  --ds-text-muted: rgba(20, 20, 20, 0.52);
+  --ds-border: rgba(20, 20, 20, 0.08);
+  --ds-accent: #ff6b00;
+  --ds-accent-soft: rgba(255, 107, 0, 0.12);
+  --ds-ink: #1a1a1a;
+  --ds-radius: 14px;
+  --ds-radius-lg: 18px;
+  --ds-radius-xl: 24px;
+  --ds-shadow: 0 1px 2px rgba(20, 20, 40, 0.05), 0 8px 28px rgba(20, 20, 40, 0.06);
+  --ds-shadow-hover: 0 10px 36px rgba(20, 20, 40, 0.1);
+}
+
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei',
+    sans-serif;
+  color: var(--ds-text);
+  background: var(--ds-page-bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Ant Design 表格在浅底上的轻量圆角容器内更协调 */
+.ant-table-wrapper .ant-table {
+  border-radius: var(--ds-radius);
+  overflow: hidden;
+}

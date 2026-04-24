@@ -3,7 +3,7 @@ import { siteTitle } from '@/config/site'
 </script>
 
 <template>
-  <main class="about-page">
+  <main class="about-page ds-surface">
     <a-typography-title :level="2">关于</a-typography-title>
     <a-typography-paragraph>
       {{ siteTitle }}
@@ -64,7 +64,16 @@ import { siteTitle } from '@/config/site'
 </template>
 
 <style scoped>
+.ds-surface {
+  background: var(--ds-surface);
+  border-radius: var(--ds-radius-xl);
+  box-shadow: var(--ds-shadow);
+  border: 1px solid var(--ds-border);
+  padding: 28px 32px 36px;
+}
+
 .about-page {
   max-width: 720px;
+  margin: 0 auto;
 }
 </style>
