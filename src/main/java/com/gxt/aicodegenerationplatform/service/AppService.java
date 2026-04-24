@@ -46,4 +46,6 @@ public interface AppService extends IService<App> {
     AppVO getAppVO(App app, User viewer);
 
     Flux<String> chatToGenCode(Long appId, String message, User loginUser);
+
+    String deployApp(Long appId, User loginUser);
 }
