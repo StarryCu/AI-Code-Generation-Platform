@@ -9,6 +9,10 @@ spring:
     url: jdbc:mysql://localhost:3306/gxt
     username: root
     password: root
+  session:
+    store-type: redis
+    timeout: 3600
+
   # redis
   data:
     redis:
@@ -20,6 +24,10 @@ server:
   port: 8123
   servlet:
     context-path: /api
+    session:
+      cookie:
+        max-age: 3600
+
 # springdoc-openapi
 springdoc:
   group-configs:
