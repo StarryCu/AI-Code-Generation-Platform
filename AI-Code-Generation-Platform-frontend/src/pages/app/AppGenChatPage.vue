@@ -4,7 +4,8 @@ import { useRoute, useRouter } from 'vue-router'
 import { message, Modal } from 'ant-design-vue'
 import { storeToRefs } from 'pinia'
 import { API_BASE } from '@/config/apiBase'
-import { deployApp, getAppVOById } from '@/api/appController'
+import { deployApp, getAppVoById } from '@/api/appController'
+import { listAppChatHistoryByCursor } from '@/api/chatHistoryController'
 import { ChatSseHttpError, streamAppChatGenCode } from '@/utils/chatSse'
 import { useUserStore } from '@/stores/user'
 import { RobotOutlined } from '@ant-design/icons-vue'
@@ -13,6 +14,8 @@ import ChatMarkdown from '@/components/ChatMarkdown.vue'
 type ChatRole = 'user' | 'assistant'
 
 interface ChatMessage {
+  id?: number
+  createTime?: string
   role: ChatRole
   content: string
 }
@@ -22,7 +25,7 @@ const router = useRouter()
 const userStore = useUserStore()
 const { loginUser } = storeToRefs(userStore)
 
-const appId = ref(0)
+const appId = ref<string>('')
 const appDetail = ref<API.AppVO | null>(null)
 const messages = ref<ChatMessage[]>([])
 const input = ref('')
@@ -31,6 +34,10 @@ const previewUrl = ref<string | null>(null)
 const listRef = ref<HTMLElement | null>(null)
 const abortCtl = ref<AbortController | null>(null)
 const autoStarted = ref(false)
+const historyLoading = ref(false)
+const historyLoadingMore = ref(false)
+const historyHasMore = ref(false)
+const historyCursor = ref<{ beforeCreateTime?: string; beforeId?: number }>({})
 
 const userDisplayName = computed(
   () => loginUser.value?.userName || loginUser.value?.userAccount || '我',
@@ -45,6 +52,34 @@ function buildPreviewUrl(vo: API.AppVO) {
   return `${base}/static/${type}_${id}/`
 }
 
+function isUserMessageType(t?: string): boolean {
+  if (!t) return false
+  const s = String(t).toLowerCase()
+  return s.includes('user') || s.includes('human')
+}
+
+function mapHistoryRecordToMsg(r: API.ChatHistoryVO): ChatMessage | null {
+  const content = (r.message ?? '').toString()
+  if (!content.trim()) return null
+  return {
+    id: r.id,
+    createTime: r.createTime,
+    role: isUserMessageType(r.messageType) ? 'user' : 'assistant',
+    content,
+  }
+}
+
+function sortMsgsAsc(list: ChatMessage[]) {
+  return [...list].sort((a, b) => {
+    const ta = a.createTime ? new Date(a.createTime).getTime() : 0
+    const tb = b.createTime ? new Date(b.createTime).getTime() : 0
+    if (ta !== tb) return ta - tb
+    const ia = a.id ?? 0
+    const ib = b.id ?? 0
+    return ia - ib
+  })
+}
+
 async function scrollToBottom() {
   await nextTick()
   const el = listRef.value
@@ -52,15 +87,58 @@ async function scrollToBottom() {
   el.scrollTop = el.scrollHeight
 }
 
+async function loadHistoryPage(isMore: boolean) {
+  if (!appId.value) return
+  if (isMore) {
+    if (historyLoadingMore.value || !historyHasMore.value) return
+    historyLoadingMore.value = true
+  } else {
+    if (historyLoading.value) return
+    historyLoading.value = true
+  }
+  try {
+    const res = await listAppChatHistoryByCursor({
+      appId: appId.value as any,
+      pageSize: 10,
+      beforeCreateTime: isMore ? historyCursor.value.beforeCreateTime : undefined,
+      beforeId: isMore ? historyCursor.value.beforeId : undefined,
+    })
+    const { code, data, message: msg } = res.data
+    if (code !== 0 || !data) {
+      message.error(msg || '加载历史对话失败')
+      return
+    }
+    const page = (data.records ?? []).map(mapHistoryRecordToMsg).filter(Boolean) as ChatMessage[]
+    const pageAsc = sortMsgsAsc(page)
+    const existingIdSet = new Set(messages.value.map((m) => m.id).filter((v): v is number => v != null))
+    const deduped = pageAsc.filter((m) => (m.id == null ? true : !existingIdSet.has(m.id)))
+    if (deduped.length) {
+      messages.value = isMore ? [...deduped, ...messages.value] : [...deduped, ...messages.value]
+    }
+    messages.value = sortMsgsAsc(messages.value)
+    historyHasMore.value = !!data.hasMore
+    historyCursor.value = {
+      beforeCreateTime: data.nextBeforeCreateTime ?? undefined,
+      beforeId: data.nextBeforeId ?? undefined,
+    }
+    if (!previewUrl.value && appDetail.value && messages.value.length >= 2) {
+      previewUrl.value = buildPreviewUrl(appDetail.value)
+    }
+  } finally {
+    historyLoading.value = false
+    historyLoadingMore.value = false
+  }
+}
+
 async function loadApp(): Promise<boolean> {
-  const raw = Number(route.params.appId)
-  if (!Number.isFinite(raw) || raw <= 0) {
+  const raw = String(route.params.appId ?? '').trim()
+  if (!/^\d+$/.test(raw)) {
     message.error('无效的应用 ID')
     await router.replace('/')
     return false
   }
   appId.value = raw
-  const res = await getAppVOById({ id: raw })
+  const res = await getAppVoById({ id: raw as any })
   const { code, data, message: msg } = res.data
   if (code !== 0 || !data) {
     message.error(msg || '加载应用失败')
@@ -89,7 +167,7 @@ async function runStream(userText: string) {
 
   try {
     await streamAppChatGenCode(
-      appId.value,
+      appId.value as any,
       userText,
       (chunk) => {
         const cur = messages.value[assistantIndex]
@@ -155,10 +233,17 @@ onMounted(async () => {
   await userStore.fetchLoginUser()
   const ok = await loadApp()
   if (!ok) return
-  if (route.query.auto === '1' && appDetail.value?.initPrompt && !autoStarted.value) {
+  messages.value = []
+  previewUrl.value = null
+  historyCursor.value = {}
+  historyHasMore.value = false
+  await loadHistoryPage(false)
+
+  const isMyApp = appDetail.value?.userId != null && appDetail.value.userId === loginUser.value?.id
+  const noHistory = messages.value.length === 0
+  if (isMyApp && noHistory && appDetail.value?.initPrompt && !autoStarted.value) {
     autoStarted.value = true
     const p = appDetail.value.initPrompt.trim()
-    await router.replace({ path: route.path })
     if (p) await runStream(p)
   }
 })
@@ -174,7 +259,19 @@ watch(
     messages.value = []
     previewUrl.value = null
     input.value = ''
-    await loadApp()
+    historyCursor.value = {}
+    historyHasMore.value = false
+    const ok = await loadApp()
+    if (!ok) return
+    await loadHistoryPage(false)
+
+    const isMyApp = appDetail.value?.userId != null && appDetail.value.userId === loginUser.value?.id
+    const noHistory = messages.value.length === 0
+    if (isMyApp && noHistory && appDetail.value?.initPrompt && !autoStarted.value) {
+      autoStarted.value = true
+      const p = appDetail.value.initPrompt.trim()
+      if (p) await runStream(p)
+    }
   },
 )
 </script>
@@ -213,6 +310,11 @@ watch(
       <section class="gen__panel ds-surface">
         <div class="gen__panel-head">对话</div>
         <div ref="listRef" class="gen__messages">
+          <div v-if="historyHasMore" class="gen__more">
+            <a-button size="small" :loading="historyLoadingMore" @click="loadHistoryPage(true)">
+              加载更多
+            </a-button>
+          </div>
           <div v-for="(m, idx) in messages" :key="idx" class="gen__msg" :class="`gen__msg--${m.role}`">
             <template v-if="m.role === 'assistant'">
               <div class="gen__msg-side gen__msg-side--assistant">
@@ -243,7 +345,12 @@ watch(
               </div>
             </template>
           </div>
-          <a-empty v-if="!messages.length" class="gen__empty" description="发送消息开始生成代码" />
+          <a-empty
+            v-if="!messages.length && !historyLoading"
+            class="gen__empty"
+            description="发送消息开始生成代码"
+          />
+          <a-spin v-else-if="historyLoading && !messages.length" class="gen__loading" />
         </div>
         <div class="gen__input-wrap">
           <div class="gen__input-ava" aria-hidden="true">
@@ -417,6 +524,19 @@ watch(
   overflow: auto;
   padding: 18px 16px;
   background: linear-gradient(180deg, #fafbfc 0%, #f3f4f6 100%);
+}
+
+.gen__more {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+
+.gen__loading {
+  width: 100%;
+  padding: 18px 0 10px;
+  display: flex;
+  justify-content: center;
 }
 
 .gen__msg {

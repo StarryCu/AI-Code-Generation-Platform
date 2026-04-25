@@ -125,20 +125,20 @@ watch([featPage, featPageSize], () => {
   void loadFeatured()
 })
 
-async function waitAppVoAfterCreate(id: string, maxAttempts = 8): Promise<boolean> {
+async function waitAppVoAfterCreate(id: number, maxAttempts = 8): Promise<API.AppVO | null> {
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
-    const voRes = await getAppVoById({ id: id as any })
+    const voRes = await getAppVoById({ id })
     const { code, data, message: msg } = voRes.data
     if (code === 0 && data) {
-      return true
+      return data
     }
     if (attempt === maxAttempts - 1) {
       message.error(msg || '应用已创建，但加载详情失败，请稍后在「我的应用」中打开')
-      return false
+      return null
     }
     await new Promise((r) => setTimeout(r, 80 * (attempt + 1)))
   }
-  return false
+  return null
 }
 
 async function onCreateApp() {
@@ -160,19 +160,20 @@ async function onCreateApp() {
       message.error(msg || '创建失败')
       return
     }
-    const newId = String(data).trim()
-    if (!/^\d+$/.test(newId)) {
+    const newId = Number(data)
+    if (!Number.isFinite(newId) || newId <= 0) {
       message.error('创建返回的应用 ID 无效')
       return
     }
-    const voReady = await waitAppVoAfterCreate(newId)
-    if (!voReady) {
+    // 等 addApp 返回 appId 后，再用该 appId 拉取 VO（可重试，避免刚落库时取不到）
+    const vo = await waitAppVoAfterCreate(newId)
+    if (!vo) {
       await loadMyApps()
       return
     }
     message.success('已创建应用，正在进入对话页')
     initPrompt.value = ''
-    await router.push({ path: `/app/gen/${encodeURIComponent(newId)}` })
+    await router.push({ path: `/app/gen/${newId}` })
   } finally {
     creating.value = false
   }

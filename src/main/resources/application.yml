@@ -9,6 +9,12 @@ spring:
     url: jdbc:mysql://localhost:3306/gxt
     username: root
     password: root
+  # redis
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      ttl: 3600
 
 server:
   port: 8123

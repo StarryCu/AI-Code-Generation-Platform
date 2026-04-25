@@ -2,7 +2,9 @@ package com.gxt.aicodegenerationplatform.ai;
 
 import com.gxt.aicodegenerationplatform.ai.model.HtmlCodeResult;
 import com.gxt.aicodegenerationplatform.ai.model.MultiFileCodeResult;
+import dev.langchain4j.service.MemoryId;
 import dev.langchain4j.service.SystemMessage;
+import dev.langchain4j.service.UserMessage;
 import reactor.core.publisher.Flux;
 
 public interface AiCodeGeneratorService {
@@ -15,6 +17,7 @@ public interface AiCodeGeneratorService {
      */
     @SystemMessage(fromResource = "prompt/short-system-prompt.txt")
     HtmlCodeResult generateHtmlCode(String userMessage);
+
 
     /**
      * 生成多文件代码

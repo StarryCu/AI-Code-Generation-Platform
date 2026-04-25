@@ -5,6 +5,7 @@ import { storeToRefs } from 'pinia'
 import { message } from 'ant-design-vue'
 import {
   AppstoreOutlined,
+  CommentOutlined,
   HomeOutlined,
   InfoCircleOutlined,
   MenuOutlined,
@@ -28,6 +29,7 @@ const navWithIcons = computed(() => {
     '/': HomeOutlined,
     '/about': InfoCircleOutlined,
     '/admin/appManage': AppstoreOutlined,
+    '/admin/chatHistoryManage': CommentOutlined,
   }
   return items.map((i: NavMenuItem) => ({
     ...i,

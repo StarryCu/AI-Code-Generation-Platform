@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gxt.aicodegenerationplatform.mapper.ChatHistoryMapper">
+
+    <select id="listAppHistoryByCursor" resultType="com.gxt.aicodegenerationplatform.model.entity.ChatHistory">
+        SELECT id,
+               message,
+               messageType,
+               appId,
+               userId,
+               createTime,
+               updateTime,
+               isDelete
+        FROM chat_history
+        WHERE isDelete = 0
+          AND appId = #{appId}
+        <if test="beforeTime != null and beforeId != null">
+            AND (createTime &lt; #{beforeTime}
+            OR (createTime = #{beforeTime} AND id &lt; #{beforeId}))
+        </if>
+        ORDER BY createTime DESC, id DESC
+        LIMIT #{limit}
+    </select>
+</mapper>

@@ -15,6 +15,7 @@ export function getNavMenuItems(isAdmin: boolean): NavMenuItem[] {
   const items = [...navMenuItems]
   if (isAdmin) {
     items.push({ key: '/admin/appManage', label: '应用管理' })
+    items.push({ key: '/admin/chatHistoryManage', label: '对话管理' })
   }
   return items
 }

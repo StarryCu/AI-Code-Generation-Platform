@@ -5,7 +5,7 @@ import { storeToRefs } from 'pinia'
 import { useUserStore } from '@/stores/user'
 import {
   getAppByIdForAdmin,
-  getAppVOById,
+  getAppVoById,
   updateAppByAdmin,
   updateAppByUser,
 } from '@/api/appController'
@@ -69,7 +69,7 @@ async function load(id: number) {
       return
     }
 
-    const res = await getAppVOById({ id })
+    const res = await getAppVoById({ id })
     const { code, data, message: msg } = res.data
     if (code !== 0 || !data) {
       message.error(msg || '加载失败')

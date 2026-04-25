@@ -125,9 +125,9 @@ watch([featPage, featPageSize], () => {
   void loadFeatured()
 })
 
-async function waitAppVoAfterCreate(id: string, maxAttempts = 8): Promise<boolean> {
+async function waitAppVoAfterCreate(id: number, maxAttempts = 8): Promise<boolean> {
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
-    const voRes = await getAppVoById({ id: id as any })
+    const voRes = await getAppVoById({ id })
     const { code, data, message: msg } = voRes.data
     if (code === 0 && data) {
       return true
@@ -160,8 +160,8 @@ async function onCreateApp() {
       message.error(msg || '创建失败')
       return
     }
-    const newId = String(data).trim()
-    if (!/^\d+$/.test(newId)) {
+    const newId = Number(data)
+    if (!Number.isFinite(newId) || newId <= 0) {
       message.error('创建返回的应用 ID 无效')
       return
     }
@@ -172,7 +172,7 @@ async function onCreateApp() {
     }
     message.success('已创建应用，正在进入对话页')
     initPrompt.value = ''
-    await router.push({ path: `/app/gen/${encodeURIComponent(newId)}` })
+    await router.push({ path: `/app/gen/${newId}` })
   } finally {
     creating.value = false
   }

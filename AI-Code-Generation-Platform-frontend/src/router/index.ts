@@ -4,6 +4,7 @@ import HomePage from '@/pages/HomePage.vue'
 import AboutPage from '@/pages/AboutPage.vue'
 import UserManagePage from '@/pages/admin/UserManagePage.vue'
 import AppManagePage from '@/pages/admin/AppManagePage.vue'
+import ChatHistoryManagePage from '@/pages/admin/ChatHistoryManagePage.vue'
 import UserRegisterPage from '@/pages/user/UserRegisterPage.vue'
 import UserLoginPage from '@/pages/user/UserLoginPage.vue'
 import AppGenChatPage from '@/pages/app/AppGenChatPage.vue'
@@ -53,6 +54,12 @@ const router = createRouter({
       name: '应用管理',
       component: AppManagePage,
       meta: { requiresAdmin: true, pageTitle: '应用管理' },
+    },
+    {
+      path: '/admin/chatHistoryManage',
+      name: '对话管理',
+      component: ChatHistoryManagePage,
+      meta: { requiresAdmin: true, pageTitle: '对话管理' },
     },
   ],
 })

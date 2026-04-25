@@ -23,10 +23,12 @@ import com.gxt.aicodegenerationplatform.model.enums.CodeGenTypeEnum;
 import com.gxt.aicodegenerationplatform.model.enums.UserRoleEnum;
 import com.gxt.aicodegenerationplatform.model.vo.AppVO;
 import com.gxt.aicodegenerationplatform.service.AppService;
+import com.gxt.aicodegenerationplatform.service.ChatHistoryService;
 import com.mybatisflex.core.paginate.Page;
 import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.spring.service.impl.ServiceImpl;
 import jakarta.annotation.Resource;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 
@@ -39,11 +41,15 @@ import java.util.stream.Collectors;
 /**
  * 应用 服务层实现。
  */
+@Slf4j
 @Service
 public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppService {
 
     @Resource
     private AiCodeGeneratorFacade aiCodeGeneratorFacade;
+
+    @Resource
+    private ChatHistoryService chatHistoryService;
     @Override
     public long addApp(AppAddRequest request, User loginUser) {
         ThrowUtils.throwIf(request == null, ErrorCode.PARAMS_ERROR);
@@ -86,13 +92,29 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
         if (!old.getUserId().equals(loginUser.getId())) {
             throw new BusinessException(ErrorCode.NO_AUTH_ERROR);
         }
-        return this.removeById(id);
+        boolean removed = this.removeById(id);
+        if (removed) {
+            try {
+                chatHistoryService.removeByAppId(id);
+            } catch (Exception e) {
+                log.error("删除应用后清理对话历史失败, appId={}", id, e);
+            }
+        }
+        return removed;
     }
 
     @Override
     public boolean deleteAppByAdmin(long id) {
         ThrowUtils.throwIf(id <= 0, ErrorCode.PARAMS_ERROR);
-        return this.removeById(id);
+        boolean removed = this.removeById(id);
+        if (removed) {
+            try {
+                chatHistoryService.removeByAppId(id);
+            } catch (Exception e) {
+                log.error("管理员删除应用后清理对话历史失败, appId={}", id, e);
+            }
+        }
+        return removed;
     }
 
     @Override
@@ -271,8 +293,30 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
         if (codeGenTypeEnum == null) {
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "不支持的代码生成类型");
         }
-        // 5. 调用 AI 生成代码
-        return aiCodeGeneratorFacade.generateAndSaveCodeStream(message, codeGenTypeEnum, appId);
+        // 5. 持久化用户消息
+        chatHistoryService.saveUserMessage(appId, app.getUserId(), message.trim());
+        // 6. 调用 AI 生成代码（流式），并在成功/失败时写入对话历史
+        StringBuilder aiContent = new StringBuilder();
+        try {
+            Flux<String> contentFlux = aiCodeGeneratorFacade.generateAndSaveCodeStream(message, codeGenTypeEnum, appId);
+            return contentFlux
+                    .doOnNext(aiContent::append)
+                    .doOnComplete(() -> chatHistoryService.saveAiMessage(appId, app.getUserId(), aiContent.toString()))
+                    .doOnError(err -> {
+                        String errMsg = err.getMessage();
+                        if (StrUtil.isBlank(errMsg)) {
+                            errMsg = err.toString();
+                        }
+                        chatHistoryService.saveAiErrorMessage(appId, app.getUserId(), errMsg);
+                    });
+        } catch (Throwable t) {
+            String errMsg = t.getMessage();
+            if (StrUtil.isBlank(errMsg)) {
+                errMsg = t.toString();
+            }
+            chatHistoryService.saveAiErrorMessage(appId, app.getUserId(), errMsg);
+            throw t;
+        }
     }
 
     @Override
