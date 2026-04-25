@@ -8,6 +8,7 @@ import com.gxt.aicodegenerationplatform.model.vo.ChatHistoryAdminVO;
 import com.gxt.aicodegenerationplatform.model.vo.ChatHistoryAppPageVO;
 import com.mybatisflex.core.paginate.Page;
 import com.mybatisflex.core.service.IService;
+import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 
 /**
  * 对话历史 服务层。
@@ -43,4 +44,6 @@ public interface ChatHistoryService extends IService<ChatHistory> {
      * 按应用 id 逻辑删除全部对话记录（删除应用时调用）。
      */
     boolean removeByAppId(Long appId);
+
+    int loadChatHistoryToMemory(Long appId, MessageWindowChatMemory chatMemory, int maxCount);
 }
