@@ -49,9 +49,6 @@ function buildPreviewUrl(vo: API.AppVO) {
   const id = vo.id
   if (!id) return null
   const base = API_BASE.replace(/\/$/, '')
-  if (vo.codeGenType === 'vue_project') {
-    return `${base}/static/${type}_${id}/dist/index.html`
-  }
   return `${base}/static/${type}_${id}/`
 }
 

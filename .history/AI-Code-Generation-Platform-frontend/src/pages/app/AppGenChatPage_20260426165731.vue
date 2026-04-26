@@ -10,6 +10,7 @@ import { ChatSseHttpError, streamAppChatGenCode } from '@/utils/chatSse'
 import { useUserStore } from '@/stores/user'
 import { RobotOutlined } from '@ant-design/icons-vue'
 import ChatMarkdown from '@/components/ChatMarkdown.vue'
+import { getStaticPreviewUrl } from '@/config/codeGenType'
 
 type ChatRole = 'user' | 'assistant'
 
@@ -48,11 +49,7 @@ function buildPreviewUrl(vo: API.AppVO) {
   const type = vo.codeGenType ?? 'multi_file'
   const id = vo.id
   if (!id) return null
-  const base = API_BASE.replace(/\/$/, '')
-  if (vo.codeGenType === 'vue_project') {
-    return `${base}/static/${type}_${id}/dist/index.html`
-  }
-  return `${base}/static/${type}_${id}/`
+  return getStaticPreviewUrl(type, id)
 }
 
 function isUserMessageType(t?: string): boolean {
