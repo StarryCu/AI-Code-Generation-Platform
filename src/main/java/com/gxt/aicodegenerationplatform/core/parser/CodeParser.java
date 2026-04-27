@@ -2,8 +2,7 @@ package com.gxt.aicodegenerationplatform.core.parser;
 
 /**
  * 代码解析器策略接口
- * 
- * @author yupi
+ *
  */
 public interface CodeParser<T> {
 

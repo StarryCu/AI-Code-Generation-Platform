@@ -21,7 +21,7 @@ import java.util.List;
  */
 public interface AppService extends IService<App> {
 
-    long addApp(AppAddRequest request, User loginUser);
+    Long addApp(AppAddRequest request, User loginUser);
 
     boolean updateAppByUser(AppUserUpdateRequest request, User loginUser);
 

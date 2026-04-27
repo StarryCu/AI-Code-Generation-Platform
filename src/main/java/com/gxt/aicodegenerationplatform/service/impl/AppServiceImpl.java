@@ -5,6 +5,7 @@ import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
+import com.gxt.aicodegenerationplatform.ai.AiCodeGenTypeRoutingService;
 import com.gxt.aicodegenerationplatform.constant.AppConstant;
 import com.gxt.aicodegenerationplatform.core.builder.VueProjectBuilder;
 import com.gxt.aicodegenerationplatform.core.facade.AiCodeGeneratorFacade;
@@ -60,23 +61,30 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
     @Resource
     private VueProjectBuilder vueProjectBuilder;
 
+    @Resource
+    private AiCodeGenTypeRoutingService aiCodeGenTypeRoutingService;
+
     @Override
-    public long addApp(AppAddRequest request, User loginUser) {
-        ThrowUtils.throwIf(request == null, ErrorCode.PARAMS_ERROR);
-        if (StrUtil.isBlank(request.getInitPrompt())) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "initPrompt 不能为空");
-        }
-        App app = App.builder()
-                .appName(StrUtil.blankToDefault(StrUtil.trim(request.getAppName()), "未命名应用"))
-                .initPrompt(request.getInitPrompt().trim())
-                .userId(loginUser.getId())
-                .priority(0)
-                .editTime(LocalDateTime.now())
-                .build();
-        boolean ok = this.save(app);
-        ThrowUtils.throwIf(!ok, ErrorCode.OPERATION_ERROR);
+    public Long addApp(AppAddRequest appAddRequest, User loginUser) {
+        // 参数校验
+        String initPrompt = appAddRequest.getInitPrompt();
+        ThrowUtils.throwIf(StrUtil.isBlank(initPrompt), ErrorCode.PARAMS_ERROR, "初始化 prompt 不能为空");
+        // 构造入库对象
+        App app = new App();
+        BeanUtil.copyProperties(appAddRequest, app);
+        app.setUserId(loginUser.getId());
+        // 应用名称暂时为 initPrompt 前 12 位
+        app.setAppName(initPrompt.substring(0, Math.min(initPrompt.length(), 12)));
+        // 使用 AI 智能选择代码生成类型
+        CodeGenTypeEnum selectedCodeGenType = aiCodeGenTypeRoutingService.routeCodeGenType(initPrompt);
+        app.setCodeGenType(selectedCodeGenType.getValue());
+        // 插入数据库
+        boolean result = this.save(app);
+        ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
+        log.info("应用创建成功，ID: {}, 类型: {}", app.getId(), selectedCodeGenType.getValue());
         return app.getId();
     }
+
 
     @Override
     public boolean updateAppByUser(AppUserUpdateRequest request, User loginUser) {
