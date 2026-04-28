@@ -7,7 +7,9 @@ import com.gxt.aicodegenerationplatform.annotation.AuthCheck;
 import com.gxt.aicodegenerationplatform.common.BaseResponse;
 import com.gxt.aicodegenerationplatform.common.DeleteRequest;
 import com.gxt.aicodegenerationplatform.common.ResultUtils;
+import com.gxt.aicodegenerationplatform.constant.AppConstant;
 import com.gxt.aicodegenerationplatform.constant.UserConstant;
+import com.gxt.aicodegenerationplatform.exception.BusinessException;
 import com.gxt.aicodegenerationplatform.exception.ErrorCode;
 import com.gxt.aicodegenerationplatform.exception.ThrowUtils;
 import com.gxt.aicodegenerationplatform.model.dto.app.*;
@@ -16,15 +18,19 @@ import com.gxt.aicodegenerationplatform.model.entity.User;
 import com.gxt.aicodegenerationplatform.model.enums.CodeGenTypeEnum;
 import com.gxt.aicodegenerationplatform.model.vo.AppVO;
 import com.gxt.aicodegenerationplatform.service.AppService;
+import com.gxt.aicodegenerationplatform.service.ProjectDownloadService;
 import com.gxt.aicodegenerationplatform.service.UserService;
 import com.mybatisflex.core.paginate.Page;
+import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 
+import java.io.File;
 import java.util.Map;
 
 /**
@@ -39,6 +45,9 @@ public class AppController {
 
     @Autowired
     private UserService userService;
+
+    @Resource
+    private ProjectDownloadService projectDownloadService;
 
     /**
      * 创建应用
@@ -215,6 +224,41 @@ public class AppController {
         // 调用服务部署应用
         String deployUrl = appService.deployApp(appId, loginUser);
         return ResultUtils.success(deployUrl);
+    }
+
+    /**
+     * 下载应用代码
+     *
+     * @param appId    应用ID
+     * @param request  请求
+     * @param response 响应
+     */
+    @GetMapping("/download/{appId}")
+    public void downloadAppCode(@PathVariable Long appId,
+                                HttpServletRequest request,
+                                HttpServletResponse response) {
+        // 1. 基础校验
+        ThrowUtils.throwIf(appId == null || appId <= 0, ErrorCode.PARAMS_ERROR, "应用ID无效");
+        // 2. 查询应用信息
+        App app = appService.getById(appId);
+        ThrowUtils.throwIf(app == null, ErrorCode.NOT_FOUND_ERROR, "应用不存在");
+        // 3. 权限校验：只有应用创建者可以下载代码
+        User loginUser = userService.getLoginUser(request);
+        if (!app.getUserId().equals(loginUser.getId())) {
+            throw new BusinessException(ErrorCode.NO_AUTH_ERROR, "无权限下载该应用代码");
+        }
+        // 4. 构建应用代码目录路径（生成目录，非部署目录）
+        String codeGenType = app.getCodeGenType();
+        String sourceDirName = codeGenType + "_" + appId;
+        String sourceDirPath = AppConstant.CODE_OUTPUT_ROOT_DIR + File.separator + sourceDirName;
+        // 5. 检查代码目录是否存在
+        File sourceDir = new File(sourceDirPath);
+        ThrowUtils.throwIf(!sourceDir.exists() || !sourceDir.isDirectory(),
+                ErrorCode.NOT_FOUND_ERROR, "应用代码不存在，请先生成代码");
+        // 6. 生成下载文件名（不建议添加中文内容）
+        String downloadFileName = String.valueOf(appId);
+        // 7. 调用通用下载服务
+        projectDownloadService.downloadProjectAsZip(sourceDirPath, downloadFileName, response);
     }
 
 

@@ -2,7 +2,7 @@ package com.gxt.aicodegenerationplatform.ai;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
-import com.gxt.aicodegenerationplatform.ai.tools.FileWriteTool;
+import com.gxt.aicodegenerationplatform.ai.tools.*;
 import com.gxt.aicodegenerationplatform.exception.BusinessException;
 import com.gxt.aicodegenerationplatform.exception.ErrorCode;
 import com.gxt.aicodegenerationplatform.model.enums.CodeGenTypeEnum;
@@ -37,6 +37,9 @@ public class AiCodeGeneratorServiceFactory {
 
     @Resource
     private StreamingChatModel reasoningStreamingChatModel;
+
+    @Resource
+    private ToolManager toolManager;
 
 
 
@@ -95,10 +98,13 @@ public class AiCodeGeneratorServiceFactory {
         // 根据代码生成类型选择不同的模型配置
         return switch (codeGenType) {
             // Vue 项目生成使用推理模型
+
+
+            // Vue 项目生成使用推理模型
             case VUE_PROJECT -> AiServices.builder(AiCodeGeneratorService.class)
                     .streamingChatModel(reasoningStreamingChatModel)
                     .chatMemoryProvider(memoryId -> chatMemory)
-                    .tools(new FileWriteTool())
+                    .tools(toolManager.getAllTools())
                     .hallucinatedToolNameStrategy(toolExecutionRequest -> ToolExecutionResultMessage.from(
                             toolExecutionRequest, "Error: there is no tool called " + toolExecutionRequest.name()
                     ))
