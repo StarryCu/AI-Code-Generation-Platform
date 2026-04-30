@@ -34,16 +34,6 @@ const cover = ref('')
 const priority = ref<number | null>(null)
 const editingId = ref(0)
 const ownerUserId = ref<number | null>(null)
-const codeGenType = ref('')
-
-function getCodeGenTypeText(type?: string): string {
-  const typeMap: Record<string, string> = {
-    html: '原生 HTML',
-    multi_file: '多文件',
-    vue_project: 'Vue 工程',
-  }
-  return typeMap[type ?? ''] || '未知'
-}
 
 function resetForm() {
   editingId.value = 0
@@ -51,7 +41,6 @@ function resetForm() {
   appName.value = ''
   cover.value = ''
   priority.value = null
-  codeGenType.value = ''
 }
 
 function close() {
@@ -77,7 +66,6 @@ async function load(id: number) {
       appName.value = data.appName ?? ''
       cover.value = data.cover ?? ''
       priority.value = data.priority ?? 0
-      codeGenType.value = data.codeGenType ?? ''
       return
     }
 
@@ -97,7 +85,6 @@ async function load(id: number) {
     appName.value = data.appName ?? ''
     cover.value = data.cover ?? ''
     priority.value = data.priority ?? 0
-    codeGenType.value = data.codeGenType ?? ''
   } finally {
     loading.value = false
   }
@@ -169,11 +156,6 @@ async function onSubmit() {
       <a-form layout="vertical" class="edit-form" @submit.prevent="onSubmit">
         <a-form-item label="应用名称" required>
           <a-input v-model:value="appName" placeholder="应用名称" allow-clear />
-        </a-form-item>
-        <a-form-item label="生成类型">
-          <a-tag :color="codeGenType === 'vue_project' ? 'green' : codeGenType === 'html' ? 'blue' : 'orange'">
-            {{ getCodeGenTypeText(codeGenType) }}
-          </a-tag>
         </a-form-item>
         <template v-if="isAdmin">
           <a-form-item label="封面 URL">

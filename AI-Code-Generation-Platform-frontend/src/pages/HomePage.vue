@@ -219,15 +219,6 @@ function appInitial(name?: string) {
   const s = (name ?? 'A').trim()
   return s.slice(0, 1).toUpperCase()
 }
-
-function getCodeGenTypeText(type?: string): string {
-  const typeMap: Record<string, string> = {
-    html: '原生 HTML',
-    multi_file: '多文件',
-    vue_project: 'Vue 工程',
-  }
-  return typeMap[type ?? ''] || '未知'
-}
 </script>
 
 <template>
@@ -390,11 +381,7 @@ function getCodeGenTypeText(type?: string): string {
         <a-descriptions bordered size="small" :column="1">
           <a-descriptions-item label="ID">{{ detailApp.id }}</a-descriptions-item>
           <a-descriptions-item label="名称">{{ detailApp.appName }}</a-descriptions-item>
-          <a-descriptions-item label="生成类型">
-            <a-tag :color="detailApp.codeGenType === 'vue_project' ? 'green' : detailApp.codeGenType === 'html' ? 'blue' : 'orange'">
-              {{ getCodeGenTypeText(detailApp.codeGenType) }}
-            </a-tag>
-          </a-descriptions-item>
+          <a-descriptions-item label="类型">{{ detailApp.codeGenType }}</a-descriptions-item>
           <a-descriptions-item label="优先级">{{ detailApp.priority }}</a-descriptions-item>
           <a-descriptions-item label="创建时间">{{ detailApp.createTime }}</a-descriptions-item>
           <a-descriptions-item v-if="detailApp.initPrompt" label="初始提示词">

@@ -44,15 +44,6 @@ const userDisplayName = computed(
 )
 const userInitial = computed(() => userDisplayName.value.slice(0, 1).toUpperCase())
 
-function getCodeGenTypeText(type?: string): string {
-  const typeMap: Record<string, string> = {
-    html: '原生 HTML',
-    multi_file: '多文件',
-    vue_project: 'Vue 工程',
-  }
-  return typeMap[type ?? ''] || '未知'
-}
-
 function buildPreviewUrl(vo: API.AppVO) {
   const type = vo.codeGenType ?? 'multi_file'
   const id = vo.id
@@ -96,14 +87,7 @@ async function scrollToBottom() {
   await nextTick()
   const el = listRef.value
   if (!el) return
-  requestAnimationFrame(() => {
-    el.scrollTop = el.scrollHeight
-    setTimeout(() => {
-      if (el) {
-        el.scrollTop = el.scrollHeight
-      }
-    }, 30)
-  })
+  el.scrollTop = el.scrollHeight
 }
 
 async function loadHistoryPage(isMore: boolean) {
@@ -226,17 +210,6 @@ async function onSend() {
   await runStream(text)
 }
 
-async function onDownload() {
-  if (!appDetail.value?.id) return
-  const url = `${API_BASE}/app/download/${appDetail.value.id}`
-  const link = document.createElement('a')
-  link.href = url
-  link.download = `app-${appDetail.value.id}.zip`
-  document.body.appendChild(link)
-  link.click()
-  document.body.removeChild(link)
-}
-
 async function onDeploy() {
   if (!appDetail.value?.id) return
   Modal.confirm({
@@ -328,22 +301,12 @@ watch(
         </div>
         <div class="gen__bar-text">
           <span class="gen__bar-label">当前应用</span>
-          <div class="gen__bar-title-row">
-            <h2 class="gen__bar-title">{{ appDetail?.appName || `应用 #${appId}` }}</h2>
-            <a-tag v-if="appDetail?.codeGenType" class="gen__bar-type">
-              {{ getCodeGenTypeText(appDetail.codeGenType) }}
-            </a-tag>
-          </div>
+          <h2 class="gen__bar-title">{{ appDetail?.appName || `应用 #${appId}` }}</h2>
         </div>
       </div>
-      <a-space>
-        <a-button size="large" class="gen__download" :disabled="!appDetail?.id" @click="onDownload">
-          下载代码
-        </a-button>
-        <a-button type="primary" size="large" class="gen__deploy" :disabled="!appDetail?.id" @click="onDeploy">
-          部署
-        </a-button>
-      </a-space>
+      <a-button type="primary" size="large" class="gen__deploy" :disabled="!appDetail?.id" @click="onDeploy">
+        部署
+      </a-button>
     </header>
 
     <div class="gen__grid">
@@ -437,17 +400,13 @@ watch(
 .gen {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  height: calc(100vh - 80px);
+  gap: 16px;
+  min-height: calc(100vh - 140px);
   max-width: 1600px;
   margin: 0 auto;
-  overflow: hidden;
 }
 
 .gen__bar {
-  position: sticky;
-  top: 0;
-  z-index: 100;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -516,33 +475,6 @@ watch(
   white-space: nowrap;
 }
 
-.gen__bar-title-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.gen__bar-type {
-  flex-shrink: 0;
-  font-size: 12px;
-  font-weight: 600;
-  padding: 2px 10px;
-  border-radius: 6px;
-  background: linear-gradient(135deg, #ff9a56, #ff6b00);
-  color: #fff;
-  border: none;
-}
-
-.gen__download {
-  flex-shrink: 0;
-  height: 44px !important;
-  padding-inline: 28px !important;
-  border-radius: 14px !important;
-  font-weight: 700 !important;
-  border-color: var(--ds-border);
-  color: var(--ds-ink);
-}
-
 .gen__deploy {
   flex-shrink: 0;
   height: 44px !important;
@@ -554,7 +486,7 @@ watch(
 
 .gen__grid {
   display: grid;
-  grid-template-columns: minmax(320px, 1fr) minmax(400px, 1.75fr);
+  grid-template-columns: minmax(320px, 1fr) minmax(360px, 1.25fr);
   gap: 18px;
   flex: 1;
   min-height: 0;
@@ -563,8 +495,7 @@ watch(
 .gen__panel {
   display: flex;
   flex-direction: column;
-  flex: 1;
-  min-height: 0;
+  min-height: 560px;
   overflow: hidden;
 }
 
@@ -593,30 +524,9 @@ watch(
 
 .gen__messages {
   flex: 1;
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: auto;
   padding: 18px 16px;
   background: linear-gradient(180deg, #fafbfc 0%, #f3f4f6 100%);
-}
-
-.gen__messages::-webkit-scrollbar {
-  width: 8px;
-  background: rgba(0, 0, 0, 0.05);
-}
-
-.gen__messages::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.05);
-  border-radius: 4px;
-}
-
-.gen__messages::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.3);
-  border-radius: 4px;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-}
-
-.gen__messages::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, 0.5);
 }
 
 .gen__more {
