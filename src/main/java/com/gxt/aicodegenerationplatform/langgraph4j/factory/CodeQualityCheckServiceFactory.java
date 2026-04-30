@@ -1,6 +1,6 @@
-package com.gxt.aicodegenerationplatform.ai.factory;
+package com.gxt.aicodegenerationplatform.langgraph4j.factory;
 
-import com.gxt.aicodegenerationplatform.ai.service.CodeQualityCheckService;
+import com.gxt.aicodegenerationplatform.langgraph4j.service.CodeQualityCheckService;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.service.AiServices;
 import jakarta.annotation.Resource;

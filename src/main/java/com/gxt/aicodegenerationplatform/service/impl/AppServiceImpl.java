@@ -13,6 +13,7 @@ import com.gxt.aicodegenerationplatform.core.handler.StreamHandlerExecutor;
 import com.gxt.aicodegenerationplatform.exception.BusinessException;
 import com.gxt.aicodegenerationplatform.exception.ErrorCode;
 import com.gxt.aicodegenerationplatform.exception.ThrowUtils;
+import com.gxt.aicodegenerationplatform.langgraph4j.CodeGenWorkflow;
 import com.gxt.aicodegenerationplatform.mapper.AppMapper;
 import com.gxt.aicodegenerationplatform.model.dto.app.AppAddRequest;
 import com.gxt.aicodegenerationplatform.model.dto.app.AppAdminQueryRequest;
@@ -295,7 +296,7 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
     }
 
     @Override
-    public Flux<String> chatToGenCode(Long appId, String message, User loginUser) {
+    public Flux<String> chatToGenCode(Long appId, String message, User loginUser,boolean agent) {
         // 1. 参数校验
         ThrowUtils.throwIf(appId == null || appId <= 0, ErrorCode.PARAMS_ERROR, "应用 ID 不能为空");
         ThrowUtils.throwIf(StrUtil.isBlank(message), ErrorCode.PARAMS_ERROR, "用户消息不能为空");
@@ -314,8 +315,16 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
         }
         // 5. 持久化用户消息
         chatHistoryService.saveUserMessage(appId, app.getUserId(), message.trim());
-        // 6. 调用 AI 生成代码（流式）
-        Flux<String> codeStream = aiCodeGeneratorFacade.generateAndSaveCodeStream(message, codeGenTypeEnum, appId);
+        // 6. 根据 agent 参数选择生成方式
+        Flux<String> codeStream;
+        if (agent) {
+            // Agent 模式：使用工作流生成代码
+            codeStream = new CodeGenWorkflow().executeWorkflowWithFlux(message, appId);
+        } else {
+            // 传统模式：调用 AI 生成代码（流式）
+            codeStream = aiCodeGeneratorFacade.generateAndSaveCodeStream(message, codeGenTypeEnum, appId);
+        }
+
         // 7. 收集 AI 响应内容并在完成后记录到对话历史
         return streamHandlerExecutor.doExecute(codeStream, chatHistoryService, appId, loginUser, codeGenTypeEnum);
 

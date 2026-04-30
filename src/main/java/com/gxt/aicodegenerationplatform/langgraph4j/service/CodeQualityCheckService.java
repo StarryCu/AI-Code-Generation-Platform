@@ -1,4 +1,4 @@
-package com.gxt.aicodegenerationplatform.ai.service;
+package com.gxt.aicodegenerationplatform.langgraph4j.service;
 
 import com.gxt.aicodegenerationplatform.langgraph4j.model.QualityResult;
 import dev.langchain4j.service.SystemMessage;

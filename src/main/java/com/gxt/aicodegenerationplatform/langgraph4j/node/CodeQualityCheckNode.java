@@ -2,7 +2,7 @@ package com.gxt.aicodegenerationplatform.langgraph4j.node;
 
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.StrUtil;
-import com.gxt.aicodegenerationplatform.ai.service.CodeQualityCheckService;
+import com.gxt.aicodegenerationplatform.langgraph4j.service.CodeQualityCheckService;
 import com.gxt.aicodegenerationplatform.langgraph4j.model.QualityResult;
 import com.gxt.aicodegenerationplatform.langgraph4j.state.WorkflowContext;
 import com.gxt.aicodegenerationplatform.langgraph4j.tools.SpringContextUtil;

@@ -30,6 +30,7 @@ const appDetail = ref<API.AppVO | null>(null)
 const messages = ref<ChatMessage[]>([])
 const input = ref('')
 const sending = ref(false)
+const useAgent = ref(false)
 const previewUrl = ref<string | null>(null)
 const listRef = ref<HTMLElement | null>(null)
 const abortCtl = ref<AbortController | null>(null)
@@ -141,6 +142,7 @@ async function loadApp(): Promise<boolean> {
     return false
   }
   appId.value = raw
+  useAgent.value = route.query.agent === 'true'
   const res = await getAppVoById({ id: raw as any })
   const { code, data, message: msg } = res.data
   if (code !== 0 || !data) {
@@ -177,7 +179,7 @@ async function runStream(userText: string) {
         if (cur) cur.content += chunk
         void scrollToBottom()
       },
-      { signal: ac.signal },
+      { signal: ac.signal, agent: useAgent.value },
     )
     if (appDetail.value) {
       previewUrl.value = buildPreviewUrl(appDetail.value)
@@ -369,7 +371,11 @@ watch(
             :bordered="false"
             placeholder="描述你想要的修改或页面…"
           />
-          <a-button type="primary" class="gen__send" :loading="sending" @click="onSend">发送</a-button>
+          <div class="gen__input-footer">
+            <a-switch v-model:checked="useAgent" size="small" />
+            <span class="gen__agent-label">Agent 模式</span>
+            <a-button type="primary" class="gen__send" :loading="sending" @click="onSend">发送</a-button>
+          </div>
         </div>
       </section>
 
@@ -652,6 +658,19 @@ watch(
   border-radius: 14px !important;
   font-weight: 700 !important;
   padding-inline: 22px !important;
+}
+
+.gen__input-footer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-top: 8px;
+}
+
+.gen__agent-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ds-text-muted);
 }
 
 .gen__preview-body {

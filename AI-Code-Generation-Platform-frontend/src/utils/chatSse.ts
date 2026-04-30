@@ -14,10 +14,11 @@ export async function streamAppChatGenCode(
   appId: number,
   message: string,
   onChunk: (text: string) => void,
-  options?: { signal?: AbortSignal },
+  options?: { signal?: AbortSignal; agent?: boolean },
 ): Promise<void> {
   const base = API_BASE.replace(/\/$/, '')
-  const url = `${base}/app/chat/gen/code?appId=${appId}&message=${encodeURIComponent(message)}`
+  const agentParam = options?.agent ? '&agent=true' : ''
+  const url = `${base}/app/chat/gen/code?appId=${appId}&message=${encodeURIComponent(message)}${agentParam}`
   const res = await fetch(url, {
     method: 'GET',
     credentials: 'include',

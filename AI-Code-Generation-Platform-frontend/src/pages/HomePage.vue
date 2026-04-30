@@ -21,6 +21,7 @@ const { isLogin, loginUser } = storeToRefs(userStore)
 
 const initPrompt = ref('')
 const creating = ref(false)
+const useAgent = ref(false)
 
 const myPage = ref(1)
 const myPageSize = ref(10)
@@ -172,14 +173,14 @@ async function onCreateApp() {
     }
     message.success('已创建应用，正在进入对话页')
     initPrompt.value = ''
-    await router.push({ path: `/app/gen/${encodeURIComponent(newId)}` })
+    await router.push({ path: `/app/gen/${encodeURIComponent(newId)}`, query: { agent: useAgent.value ? 'true' : 'false' } })
   } finally {
     creating.value = false
   }
 }
 
 function goChat(id: number) {
-  void router.push(`/app/gen/${id}`)
+  void router.push({ path: `/app/gen/${id}`, query: { agent: useAgent.value ? 'true' : 'false' } })
 }
 
 function goEdit(id: number) {
@@ -244,6 +245,8 @@ function appInitial(name?: string) {
         placeholder="例如：做一个深色风格的作品集首页，含导航、项目卡片与页脚联系方式…"
       />
       <div class="home__create-foot">
+        <a-switch v-model:checked="useAgent" />
+        <span class="home__agent-label">Agent 模式</span>
         <a-button
           type="primary"
           size="large"
@@ -476,7 +479,15 @@ function appInitial(name?: string) {
 .home__create-foot {
   margin-top: 16px;
   display: flex;
+  align-items: center;
   justify-content: flex-end;
+  gap: 12px;
+}
+
+.home__agent-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ds-text-muted);
 }
 
 .home__cta {
